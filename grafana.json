@@ -1,617 +1,2015 @@
 {
-    "annotations": {
-      "list": [
-        {
-          "builtIn": 1,
-          "datasource": {
-            "type": "grafana",
-            "uid": "-- Grafana --"
-          },
-          "enable": true,
-          "hide": true,
-          "iconColor": "rgba(0, 211, 255, 1)",
-          "name": "Annotations & Alerts",
-          "type": "dashboard"
-        }
-      ]
-    },
-    "description": "Dashboard for monitoring the Low Rate Reactors (LRR) as part of the BPA project",
-    "editable": true,
-    "fiscalYearStartMonth": 0,
-    "graphTooltip": 1,
-    "id": 8,
-    "links": [],
-    "liveNow": true,
-    "panels": [
+  "annotations": {
+    "list": [
       {
-        "collapsed": false,
-        "gridPos": {
-          "h": 1,
-          "w": 24,
-          "x": 0,
-          "y": 0
-        },
-        "id": 7,
-        "panels": [],
-        "title": "Overview",
-        "type": "row"
-      },
-      {
+        "builtIn": 1,
         "datasource": {
-          "type": "influxdb",
-          "uid": "aeerm33apqrr4c"
+          "type": "grafana",
+          "uid": "-- Grafana --"
         },
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "mode": "palette-classic"
-            },
-            "custom": {
-              "axisBorderShow": false,
-              "axisCenteredZero": false,
-              "axisColorMode": "text",
-              "axisLabel": "",
-              "axisPlacement": "auto",
-              "barAlignment": 0,
-              "barWidthFactor": 0.6,
-              "drawStyle": "line",
-              "fillOpacity": 0,
-              "gradientMode": "none",
-              "hideFrom": {
-                "legend": false,
-                "tooltip": false,
-                "viz": false
-              },
-              "insertNulls": false,
-              "lineInterpolation": "linear",
-              "lineWidth": 1,
-              "pointSize": 5,
-              "scaleDistribution": {
-                "type": "linear"
-              },
-              "showPoints": "auto",
-              "spanNulls": false,
-              "stacking": {
-                "group": "A",
-                "mode": "none"
-              },
-              "thresholdsStyle": {
-                "mode": "off"
-              }
-            },
-            "mappings": [],
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                },
-                {
-                  "color": "red",
-                  "value": 80
-                }
-              ]
-            }
-          },
-          "overrides": [
-            {
-              "matcher": {
-                "id": "byValue",
-                "options": {
-                  "op": "gte",
-                  "reducer": "lastNotNull",
-                  "value": 200
-                }
-              },
-              "properties": [
-                {
-                  "id": "custom.axisPlacement",
-                  "value": "right"
-                }
-              ]
-            }
-          ]
-        },
-        "gridPos": {
-          "h": 8,
-          "w": 12,
-          "x": 0,
-          "y": 1
-        },
-        "id": 2,
-        "options": {
-          "legend": {
-            "calcs": [],
-            "displayMode": "list",
-            "placement": "bottom",
-            "showLegend": true
-          },
-          "tooltip": {
-            "hideZeros": false,
-            "mode": "single",
-            "sort": "none"
-          }
-        },
-        "pluginVersion": "11.5.2",
-        "targets": [
-          {
-            "datasource": {
-              "type": "influxdb",
-              "uid": "aeerm33apqrr4c"
-            },
-            "hide": false,
-            "query": "from(bucket: \"reactor-monitoring\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"gas_meter_1\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"Flow (mL/min)\" \r\n      or r[\"_field\"] == \"Power Supply (V)\" \r\n      or r[\"_field\"] == \"Flow Normalised (mL/min)\" \r\n      or r[\"_field\"] == \"Pressure (hPa)\" \r\n      or r[\"_field\"] == \"Temperature (°C)\" \r\n      or r[\"_field\"] == \"Volume (mL)\" \r\n      or r[\"_field\"] == \"Volume Normalised (mL)\" \r\n      or r[\"_field\"] == \"Battery (V)\")\r\n  |> map(fn: (r) => ({\r\n      _time: r._time,\r\n      _value: r._value,\r\n      _field: \"Gas Meter 1 - \" + r._field\r\n  }))\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\r\n  |> yield(name: \"mean\")\r\n",
-            "refId": "A"
-          },
-          {
-            "datasource": {
-              "type": "influxdb",
-              "uid": "aeerm33apqrr4c"
-            },
-            "hide": false,
-            "query": "import \"strings\"\r\n\r\nfrom(bucket: \"reactor-monitoring\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"pico_measurements\")\r\n  |> filter(fn: (r) => r[\"device\"] == \"pico_1\") \r\n  |> filter(fn: (r) => r[\"_field\"] == \"Temperature\" or r[\"_field\"] == \"pH\" or r[\"_field\"] == \"ORP\" or r[\"_field\"] == \"motor_mA\" or r[\"_field\"] == \"RPM\")\r\n//   // Filter out unreasonable values (adjust thresholds as needed).  Use the *engineering unit* ranges.\r\n//   |> filter(fn: (r) => \r\n//       (r._field == \"motor_mA\"    and r._value <  2000 and r._value >= -5) and\r\n//       (r._field == \"Temperature\" and r._value <  110  and r._value >= -1) and\r\n//       (r._field == \"pH\"          and r._value <  14.5 and r._value >= -0.5) and\r\n//       (r._field == \"ORP\"         and r._value <  2100 and r._value >= -2100) and\r\n//       (r._field == \"RPM\"         and r._value < 60000 and r._value >= -1)\r\n//     )\r\n  |> map(fn: (r) => ({\r\n      _time: r._time,\r\n      _value: r._value,\r\n      _field: \"Pico \" + strings.substring(v: r.device, start: 5, end: 6) + \" - \" + r._field //Simplified field naming\r\n  }))\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\r\n  |> yield(name: \"picos\")",
-            "refId": "B"
-          }
-        ],
-        "title": "Reactor 1",
-        "type": "timeseries"
-      },
-      {
-        "datasource": {
-          "type": "influxdb",
-          "uid": "aeerm33apqrr4c"
-        },
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "mode": "palette-classic"
-            },
-            "custom": {
-              "axisBorderShow": false,
-              "axisCenteredZero": false,
-              "axisColorMode": "text",
-              "axisLabel": "",
-              "axisPlacement": "auto",
-              "barAlignment": 0,
-              "barWidthFactor": 0.6,
-              "drawStyle": "line",
-              "fillOpacity": 0,
-              "gradientMode": "none",
-              "hideFrom": {
-                "legend": false,
-                "tooltip": false,
-                "viz": false
-              },
-              "insertNulls": false,
-              "lineInterpolation": "linear",
-              "lineWidth": 1,
-              "pointSize": 5,
-              "scaleDistribution": {
-                "type": "linear"
-              },
-              "showPoints": "auto",
-              "spanNulls": false,
-              "stacking": {
-                "group": "A",
-                "mode": "none"
-              },
-              "thresholdsStyle": {
-                "mode": "off"
-              }
-            },
-            "mappings": [],
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                },
-                {
-                  "color": "red",
-                  "value": 80
-                }
-              ]
-            }
-          },
-          "overrides": [
-            {
-              "matcher": {
-                "id": "byValue",
-                "options": {
-                  "op": "gte",
-                  "reducer": "lastNotNull",
-                  "value": 200
-                }
-              },
-              "properties": [
-                {
-                  "id": "custom.axisPlacement",
-                  "value": "right"
-                }
-              ]
-            }
-          ]
-        },
-        "gridPos": {
-          "h": 8,
-          "w": 12,
-          "x": 12,
-          "y": 1
-        },
-        "id": 4,
-        "options": {
-          "legend": {
-            "calcs": [],
-            "displayMode": "list",
-            "placement": "bottom",
-            "showLegend": true
-          },
-          "tooltip": {
-            "hideZeros": false,
-            "mode": "single",
-            "sort": "none"
-          }
-        },
-        "pluginVersion": "11.5.2",
-        "targets": [
-          {
-            "datasource": {
-              "type": "influxdb",
-              "uid": "aeerm33apqrr4c"
-            },
-            "hide": false,
-            "query": "from(bucket: \"reactor-monitoring\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"gas_meter_1\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"Flow (mL/min)\" \r\n      or r[\"_field\"] == \"Power Supply (V)\" \r\n      or r[\"_field\"] == \"Flow Normalised (mL/min)\" \r\n      or r[\"_field\"] == \"Pressure (hPa)\" \r\n      or r[\"_field\"] == \"Temperature (°C)\" \r\n      or r[\"_field\"] == \"Volume (mL)\" \r\n      or r[\"_field\"] == \"Volume Normalised (mL)\" \r\n      or r[\"_field\"] == \"Battery (V)\")\r\n  |> map(fn: (r) => ({\r\n      _time: r._time,\r\n      _value: r._value,\r\n      _field: \"Gas Meter 1 - \" + r._field\r\n  }))\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\r\n  |> yield(name: \"mean\")\r\n",
-            "refId": "A"
-          },
-          {
-            "datasource": {
-              "type": "influxdb",
-              "uid": "aeerm33apqrr4c"
-            },
-            "hide": false,
-            "query": "import \"strings\"\r\n\r\nfrom(bucket: \"reactor-monitoring\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"pico_measurements\")\r\n  |> filter(fn: (r) => r[\"device\"] == \"pico_2\") \r\n  |> filter(fn: (r) => r[\"_field\"] == \"Temperature\" or r[\"_field\"] == \"pH\" or r[\"_field\"] == \"ORP\" or r[\"_field\"] == \"motor_mA\" or r[\"_field\"] == \"RPM\")\r\n//   // Filter out unreasonable values (adjust thresholds as needed).  Use the *engineering unit* ranges.\r\n//   |> filter(fn: (r) => \r\n//       (r._field == \"motor_mA\"    and r._value <  2000 and r._value >= -5) and\r\n//       (r._field == \"Temperature\" and r._value <  110  and r._value >= -1) and\r\n//       (r._field == \"pH\"          and r._value <  14.5 and r._value >= -0.5) and\r\n//       (r._field == \"ORP\"         and r._value <  2100 and r._value >= -2100) and\r\n//       (r._field == \"RPM\"         and r._value < 60000 and r._value >= -1)\r\n//     )\r\n  |> map(fn: (r) => ({\r\n      _time: r._time,\r\n      _value: r._value,\r\n      _field: \"Pico \" + strings.substring(v: r.device, start: 5, end: 6) + \" - \" + r._field //Simplified field naming\r\n  }))\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\r\n  |> yield(name: \"picos\")",
-            "refId": "B"
-          }
-        ],
-        "title": "Reactor 2",
-        "type": "timeseries"
-      },
-      {
-        "datasource": {
-          "type": "influxdb",
-          "uid": "aeerm33apqrr4c"
-        },
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "mode": "palette-classic"
-            },
-            "custom": {
-              "axisBorderShow": false,
-              "axisCenteredZero": false,
-              "axisColorMode": "text",
-              "axisLabel": "",
-              "axisPlacement": "auto",
-              "barAlignment": 0,
-              "barWidthFactor": 0.6,
-              "drawStyle": "line",
-              "fillOpacity": 0,
-              "gradientMode": "none",
-              "hideFrom": {
-                "legend": false,
-                "tooltip": false,
-                "viz": false
-              },
-              "insertNulls": false,
-              "lineInterpolation": "linear",
-              "lineWidth": 1,
-              "pointSize": 5,
-              "scaleDistribution": {
-                "type": "linear"
-              },
-              "showPoints": "auto",
-              "spanNulls": false,
-              "stacking": {
-                "group": "A",
-                "mode": "none"
-              },
-              "thresholdsStyle": {
-                "mode": "off"
-              }
-            },
-            "mappings": [],
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                },
-                {
-                  "color": "red",
-                  "value": 80
-                }
-              ]
-            }
-          },
-          "overrides": [
-            {
-              "matcher": {
-                "id": "byValue",
-                "options": {
-                  "op": "gte",
-                  "reducer": "lastNotNull",
-                  "value": 200
-                }
-              },
-              "properties": [
-                {
-                  "id": "custom.axisPlacement",
-                  "value": "right"
-                }
-              ]
-            }
-          ]
-        },
-        "gridPos": {
-          "h": 8,
-          "w": 12,
-          "x": 0,
-          "y": 9
-        },
-        "id": 3,
-        "options": {
-          "legend": {
-            "calcs": [],
-            "displayMode": "list",
-            "placement": "bottom",
-            "showLegend": true
-          },
-          "tooltip": {
-            "hideZeros": false,
-            "mode": "single",
-            "sort": "none"
-          }
-        },
-        "pluginVersion": "11.5.2",
-        "targets": [
-          {
-            "datasource": {
-              "type": "influxdb",
-              "uid": "aeerm33apqrr4c"
-            },
-            "hide": false,
-            "query": "from(bucket: \"reactor-monitoring\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"gas_meter_1\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"Flow (mL/min)\" \r\n      or r[\"_field\"] == \"Power Supply (V)\" \r\n      or r[\"_field\"] == \"Flow Normalised (mL/min)\" \r\n      or r[\"_field\"] == \"Pressure (hPa)\" \r\n      or r[\"_field\"] == \"Temperature (°C)\" \r\n      or r[\"_field\"] == \"Volume (mL)\" \r\n      or r[\"_field\"] == \"Volume Normalised (mL)\" \r\n      or r[\"_field\"] == \"Battery (V)\")\r\n  |> map(fn: (r) => ({\r\n      _time: r._time,\r\n      _value: r._value,\r\n      _field: \"Gas Meter 1 - \" + r._field\r\n  }))\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\r\n  |> yield(name: \"mean\")\r\n",
-            "refId": "A"
-          },
-          {
-            "datasource": {
-              "type": "influxdb",
-              "uid": "aeerm33apqrr4c"
-            },
-            "hide": false,
-            "query": "import \"strings\"\r\n\r\nfrom(bucket: \"reactor-monitoring\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"pico_measurements\")\r\n  |> filter(fn: (r) => r[\"device\"] == \"pico_3\") \r\n  |> filter(fn: (r) => r[\"_field\"] == \"Temperature\" or r[\"_field\"] == \"pH\" or r[\"_field\"] == \"ORP\" or r[\"_field\"] == \"motor_mA\" or r[\"_field\"] == \"RPM\")\r\n//   // Filter out unreasonable values (adjust thresholds as needed).  Use the *engineering unit* ranges.\r\n//   |> filter(fn: (r) => \r\n//       (r._field == \"motor_mA\"    and r._value <  2000 and r._value >= -5) and\r\n//       (r._field == \"Temperature\" and r._value <  110  and r._value >= -1) and\r\n//       (r._field == \"pH\"          and r._value <  14.5 and r._value >= -0.5) and\r\n//       (r._field == \"ORP\"         and r._value <  2100 and r._value >= -2100) and\r\n//       (r._field == \"RPM\"         and r._value < 60000 and r._value >= -1)\r\n//     )\r\n  |> map(fn: (r) => ({\r\n      _time: r._time,\r\n      _value: r._value,\r\n      _field: \"Pico \" + strings.substring(v: r.device, start: 5, end: 6) + \" - \" + r._field //Simplified field naming\r\n  }))\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\r\n  |> yield(name: \"picos\")",
-            "refId": "B"
-          }
-        ],
-        "title": "Reactor 3",
-        "type": "timeseries"
-      },
-      {
-        "datasource": {
-          "type": "influxdb",
-          "uid": "aeerm33apqrr4c"
-        },
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "mode": "palette-classic"
-            },
-            "custom": {
-              "axisBorderShow": false,
-              "axisCenteredZero": false,
-              "axisColorMode": "text",
-              "axisLabel": "",
-              "axisPlacement": "auto",
-              "barAlignment": 0,
-              "barWidthFactor": 0.6,
-              "drawStyle": "line",
-              "fillOpacity": 0,
-              "gradientMode": "none",
-              "hideFrom": {
-                "legend": false,
-                "tooltip": false,
-                "viz": false
-              },
-              "insertNulls": false,
-              "lineInterpolation": "linear",
-              "lineWidth": 1,
-              "pointSize": 5,
-              "scaleDistribution": {
-                "type": "linear"
-              },
-              "showPoints": "auto",
-              "spanNulls": false,
-              "stacking": {
-                "group": "A",
-                "mode": "none"
-              },
-              "thresholdsStyle": {
-                "mode": "off"
-              }
-            },
-            "mappings": [],
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                },
-                {
-                  "color": "red",
-                  "value": 80
-                }
-              ]
-            }
-          },
-          "overrides": [
-            {
-              "matcher": {
-                "id": "byValue",
-                "options": {
-                  "op": "gte",
-                  "reducer": "lastNotNull",
-                  "value": 200
-                }
-              },
-              "properties": [
-                {
-                  "id": "custom.axisPlacement",
-                  "value": "right"
-                }
-              ]
-            }
-          ]
-        },
-        "gridPos": {
-          "h": 8,
-          "w": 12,
-          "x": 12,
-          "y": 9
-        },
-        "id": 5,
-        "options": {
-          "legend": {
-            "calcs": [],
-            "displayMode": "list",
-            "placement": "bottom",
-            "showLegend": true
-          },
-          "tooltip": {
-            "hideZeros": false,
-            "mode": "single",
-            "sort": "none"
-          }
-        },
-        "pluginVersion": "11.5.2",
-        "targets": [
-          {
-            "datasource": {
-              "type": "influxdb",
-              "uid": "aeerm33apqrr4c"
-            },
-            "hide": false,
-            "query": "from(bucket: \"reactor-monitoring\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"gas_meter_1\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"Flow (mL/min)\" \r\n      or r[\"_field\"] == \"Power Supply (V)\" \r\n      or r[\"_field\"] == \"Flow Normalised (mL/min)\" \r\n      or r[\"_field\"] == \"Pressure (hPa)\" \r\n      or r[\"_field\"] == \"Temperature (°C)\" \r\n      or r[\"_field\"] == \"Volume (mL)\" \r\n      or r[\"_field\"] == \"Volume Normalised (mL)\" \r\n      or r[\"_field\"] == \"Battery (V)\")\r\n  |> map(fn: (r) => ({\r\n      _time: r._time,\r\n      _value: r._value,\r\n      _field: \"Gas Meter 1 - \" + r._field\r\n  }))\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\r\n  |> yield(name: \"mean\")\r\n",
-            "refId": "A"
-          },
-          {
-            "datasource": {
-              "type": "influxdb",
-              "uid": "aeerm33apqrr4c"
-            },
-            "hide": false,
-            "query": "import \"strings\"\r\n\r\nfrom(bucket: \"reactor-monitoring\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"pico_measurements\")\r\n  |> filter(fn: (r) => r[\"device\"] == \"pico_4\") \r\n  |> filter(fn: (r) => r[\"_field\"] == \"Temperature\" or r[\"_field\"] == \"pH\" or r[\"_field\"] == \"ORP\" or r[\"_field\"] == \"motor_mA\" or r[\"_field\"] == \"RPM\")\r\n//   // Filter out unreasonable values (adjust thresholds as needed).  Use the *engineering unit* ranges.\r\n//   |> filter(fn: (r) => \r\n//       (r._field == \"motor_mA\"    and r._value <  2000 and r._value >= -5) and\r\n//       (r._field == \"Temperature\" and r._value <  110  and r._value >= -1) and\r\n//       (r._field == \"pH\"          and r._value <  14.5 and r._value >= -0.5) and\r\n//       (r._field == \"ORP\"         and r._value <  2100 and r._value >= -2100) and\r\n//       (r._field == \"RPM\"         and r._value < 60000 and r._value >= -1)\r\n//     )\r\n  |> map(fn: (r) => ({\r\n      _time: r._time,\r\n      _value: r._value,\r\n      _field: \"Pico \" + strings.substring(v: r.device, start: 5, end: 6) + \" - \" + r._field //Simplified field naming\r\n  }))\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\r\n  |> yield(name: \"picos\")",
-            "refId": "B"
-          }
-        ],
-        "title": "Reactor 4",
-        "type": "timeseries"
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
       }
-    ],
-    "preload": true,
-    "refresh": "5s",
-    "schemaVersion": 40,
-    "tags": [],
-    "templating": {
-      "list": [
-        {
-          "allowCustomValue": true,
-          "current": {
-            "text": "Volume (mL)",
-            "value": "Volume (mL)"
+    ]
+  },
+  "description": "Dashboard for monitoring the Low Rate Reactors (LRR) as part of the BPA project",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": 7,
+  "links": [],
+  "liveNow": true,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 25,
+      "panels": [],
+      "title": "Reactor Values",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "aeerm33apqrr4c"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
           },
-          "label": "Temperature",
-          "name": "Temperature",
-          "options": [
-            {
-              "selected": true,
-              "text": "Volume (mL)",
-              "value": "Volume (mL)"
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "axisSoftMax": 9,
+            "axisSoftMin": 6,
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
             }
-          ],
-          "query": "Volume (mL)",
-          "type": "custom"
-        },
-        {
-          "current": {
-            "text": [
-              "Flow (mL/min)"
-            ],
-            "value": [
-              "Flow (mL/min)"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
             ]
           },
-          "includeAll": true,
-          "multi": true,
-          "name": "Filter",
-          "options": [
+          "unit": "pH"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byValue",
+              "options": {
+                "op": "gte",
+                "reducer": "lastNotNull",
+                "value": 200
+              }
+            },
+            "properties": [
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 1
+      },
+      "id": 8,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.5.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "aeerm33apqrr4c"
+          },
+          "hide": false,
+          "query": "import \"strings\"\r\n\r\nfrom(bucket: \"reactor-monitoring\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"pico_measurements\")\r\n  |> filter(fn: (r) => r[\"device\"] =~ /^pico_[1-4]$/) // Matches pico_1, pico_2, pico_3, pico_4\r\n  |> filter(fn: (r) => r[\"_field\"] == \"pH\")\r\n  |> map(fn: (r) => ({\r\n      _time: r._time,\r\n      _value: r._value,\r\n      _field: \"Reactor \" + strings.substring(v: r.device, start: 5, end: 6) + \" pH\", // Labels as \"Pico 1 pH\"\r\n\r\n  }))\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\r\n  |> yield(name: \"picos\")\r\n",
+          "refId": "B"
+        }
+      ],
+      "title": "pH",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "aeerm33apqrr4c"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": true,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "axisSoftMin": -600,
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "dashed"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "dark-red",
+                "value": 0
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 1
+      },
+      "id": 17,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.5.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "aeerm33apqrr4c"
+          },
+          "hide": false,
+          "query": "import \"strings\"\r\n\r\nfrom(bucket: \"reactor-monitoring\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"pico_measurements\")\r\n  |> filter(fn: (r) => r[\"device\"] =~ /^pico_[1-4]$/) // Matches pico_1, pico_2, pico_3, pico_4\r\n  |> filter(fn: (r) => r[\"_field\"] == \"ORP\")\r\n  |> map(fn: (r) => ({\r\n      _time: r._time,\r\n      _value: r._value,\r\n      _field: \"Reactor \" + strings.substring(v: r.device, start: 5, end: 6) + \" ORP\", \r\n\r\n  }))\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\r\n  |> yield(name: \"picos\")\r\n",
+          "refId": "B"
+        }
+      ],
+      "title": "ORP",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "aeerm33apqrr4c"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "axisSoftMax": 39,
+            "axisSoftMin": 35,
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "dashed"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "dark-red",
+                "value": 36
+              },
+              {
+                "color": "dark-green",
+                "value": 37
+              },
+              {
+                "color": "dark-red",
+                "value": 38
+              }
+            ]
+          },
+          "unit": "celsius"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byValue",
+              "options": {
+                "op": "gte",
+                "reducer": "lastNotNull",
+                "value": 200
+              }
+            },
+            "properties": [
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              }
+            ]
+          },
+          {
+            "__systemRef": "hideSeriesFrom",
+            "matcher": {
+              "id": "byNames",
+              "options": {
+                "mode": "exclude",
+                "names": [
+                  "Reactor 1 Temperature",
+                  "Reactor 2 Temperature",
+                  "Reactor 4 Temperature"
+                ],
+                "prefix": "All except:",
+                "readOnly": true
+              }
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": true
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 0,
+        "y": 9
+      },
+      "id": 14,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.5.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "aeerm33apqrr4c"
+          },
+          "hide": true,
+          "query": "from(bucket: \"reactor-monitoring\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"gas_meter_1\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"Flow (mL/min)\" \r\n      or r[\"_field\"] == \"Power Supply (V)\" \r\n      or r[\"_field\"] == \"Flow Normalised (mL/min)\" \r\n      or r[\"_field\"] == \"Pressure (hPa)\" \r\n      or r[\"_field\"] == \"Temperature (°C)\" \r\n      or r[\"_field\"] == \"Volume (mL)\" \r\n      or r[\"_field\"] == \"Volume Normalised (mL)\" \r\n      or r[\"_field\"] == \"Battery (V)\")\r\n  |> map(fn: (r) => ({\r\n      _time: r._time,\r\n      _value: r._value,\r\n      _field: \"Gas Meter 1 - \" + r._field\r\n  }))\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\r\n  |> yield(name: \"mean\")\r\n",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "aeerm33apqrr4c"
+          },
+          "hide": false,
+          "query": "import \"strings\"\r\n\r\nfrom(bucket: \"reactor-monitoring\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"pico_measurements\")\r\n  |> filter(fn: (r) => r[\"device\"] =~ /^pico_[1-4]$/) // Matches pico_1, pico_2, pico_3, pico_4\r\n  |> filter(fn: (r) => r[\"_field\"] == \"Temperature\")\r\n  |> map(fn: (r) => ({\r\n      _time: r._time,\r\n      _value: r._value,\r\n      _field: \"Reactor \" + strings.substring(v: r.device, start: 5, end: 6) + \" Temperature\", \r\n\r\n  }))\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\r\n  |> yield(name: \"picos\")\r\n",
+          "refId": "B"
+        }
+      ],
+      "title": "Temperature",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "aeerm33apqrr4c"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "max": 20,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byValue",
+              "options": {
+                "op": "gte",
+                "reducer": "lastNotNull",
+                "value": 200
+              }
+            },
+            "properties": [
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 8,
+        "y": 9
+      },
+      "id": 15,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.5.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "aeerm33apqrr4c"
+          },
+          "hide": false,
+          "query": "import \"strings\"\r\n\r\nfrom(bucket: \"reactor-monitoring\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"pico_measurements\")\r\n  |> filter(fn: (r) => r[\"device\"] =~ /^pico_[1-4]$/) // Matches pico_1, pico_2, pico_3, pico_4\r\n  |> filter(fn: (r) => r[\"_field\"] == \"RPM\")\r\n  |> map(fn: (r) => ({\r\n      _time: r._time,\r\n      _value: r._value,\r\n      _field: \"Reactor \" + strings.substring(v: r.device, start: 5, end: 6) + \" RPM\", \r\n\r\n  }))\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\r\n  |> yield(name: \"picos\")\r\n",
+          "refId": "B"
+        }
+      ],
+      "title": "RPM",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "aeerm33apqrr4c"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byValue",
+              "options": {
+                "op": "gte",
+                "reducer": "lastNotNull",
+                "value": 200
+              }
+            },
+            "properties": [
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 16,
+        "y": 9
+      },
+      "id": 16,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.5.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "aeerm33apqrr4c"
+          },
+          "hide": false,
+          "query": "import \"strings\"\r\n\r\nfrom(bucket: \"reactor-monitoring\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"pico_measurements\")\r\n  |> filter(fn: (r) => r[\"device\"] =~ /^pico_[1-2]$/) // Matches pico_1, pico_2, pico_3, pico_4\r\n  |> filter(fn: (r) => r[\"_field\"] == \"motor_mA\")\r\n  |> map(fn: (r) => ({\r\n      _time: r._time,\r\n      _value: r._value,\r\n      _field: \"Reactor \" + strings.substring(v: r.device, start: 5, end: 6) + \" Motor Current (mA)\", \r\n\r\n  }))\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\r\n  |> yield(name: \"picos\")\r\n",
+          "refId": "B"
+        }
+      ],
+      "title": "Motor Current",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 16
+      },
+      "id": 6,
+      "panels": [],
+      "title": "Flow Meter Values",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "aeerm33apqrr4c"
+      },
+      "description": "Moving Average over last 10readings",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byValue",
+              "options": {
+                "op": "gte",
+                "reducer": "lastNotNull",
+                "value": 200
+              }
+            },
+            "properties": [
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 17
+      },
+      "id": 22,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.5.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "aeerm33apqrr4c"
+          },
+          "hide": false,
+          "query": "import \"strings\"\r\n\r\nfrom(bucket: \"reactor-monitoring\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] =~ /^gas_meter_[1-4]$/) \r\n  |> filter(fn: (r) => r[\"_field\"] == \"Flow Normalised (mL/min)\")\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false) // Smooths based on the dashboard time window\r\n  |> movingAverage(n: 10) \r\n  |> map(fn: (r) => ({\r\n      _time: r._time,\r\n      _value: r._value,\r\n      _field: \"Gas Meter \" + strings.substring(v: r._measurement, start: 10, end: 11) + \" - Flow Normalised (mL/min)\"\r\n  }))\r\n  |> yield(name: \"gas_meters\")\r\n",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "aeerm33apqrr4c"
+          },
+          "hide": true,
+          "query": "import \"strings\"\r\n\r\nfrom(bucket: \"reactor-monitoring\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] =~ /^gas_meter_[1-4]$/) // Matches gas_meter_1 to gas_meter_4\r\n  |> filter(fn: (r) => r[\"_field\"] == \"Flow Normalised (mL/min)\")\r\n  |> movingAverage(n: 1000)\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\r\n  |> map(fn: (r) => ({\r\n      _time: r._time,\r\n      _value: r._value,\r\n      _field: \"Gas Meter \" + strings.substring(v: r._measurement, start: 10, end: 11) + \" - Flow Normalised (mL/min)\",\r\n\r\n  }))\r\n  |> yield(name: \"gas_meters\")",
+          "refId": "B"
+        }
+      ],
+      "title": "Flow Normalised (mL/min)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "aeerm33apqrr4c"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "gas_meter_1 Volume Normalised (mL)"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Gas Meter 1 - Volume Normalised (mL)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "gas_meter_2 Volume Normalised (mL)"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Gas Meter 2 - Volume Normalised (mL)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "gas_meter_3 Volume Normalised (mL)"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Gas Meter 3 - Volume Normalised (mL)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "gas_meter_4 Volume Normalised (mL)"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Gas Meter 4 - Volume Normalised (mL)"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 17
+      },
+      "id": 23,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.5.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "aeerm33apqrr4c"
+          },
+          "hide": false,
+          "query": "from(bucket: \"reactor-monitoring\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"gas_meter_4\" or r[\"_measurement\"] == \"gas_meter_3\" or r[\"_measurement\"] == \"gas_meter_2\" or r[\"_measurement\"] == \"gas_meter_1\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"Volume Normalised (mL)\")\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\r\n  |> yield(name: \"mean\")",
+          "refId": "A"
+        }
+      ],
+      "title": "Volume Normalised (mL)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "aeerm33apqrr4c"
+      },
+      "description": "Moving average over last 1 reading",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "max": 8,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byValue",
+              "options": {
+                "op": "gte",
+                "reducer": "lastNotNull",
+                "value": 200
+              }
+            },
+            "properties": [
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 0,
+        "y": 26
+      },
+      "id": 9,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.5.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "aeerm33apqrr4c"
+          },
+          "hide": false,
+          "query": "import \"strings\"\r\n\r\nfrom(bucket: \"reactor-monitoring\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] =~ /^gas_meter_[1-4]$/) // Matches gas_meter_1 to gas_meter_4\r\n  |> filter(fn: (r) => r[\"_field\"] == \"Flow (mL/min)\")\r\n  |> movingAverage(n: 1) // Smooths spikes by averaging over the last 1000 readings\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\r\n  |> map(fn: (r) => ({\r\n      _time: r._time,\r\n      _value: r._value,\r\n      _field: \"Gas Meter \" + strings.substring(v: r._measurement, start: 10, end: 11) + \" - Flow (mL/min)\",\r\n\r\n  }))\r\n  |> yield(name: \"gas_meters\")\r\n",
+          "refId": "A"
+        }
+      ],
+      "title": "Flow (mL/min)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "aeerm33apqrr4c"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 8,
+        "y": 26
+      },
+      "id": 24,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.5.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "aeerm33apqrr4c"
+          },
+          "hide": false,
+          "query": "from(bucket: \"reactor-monitoring\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"gas_meter_4\" or r[\"_measurement\"] == \"gas_meter_3\" or r[\"_measurement\"] == \"gas_meter_2\" or r[\"_measurement\"] == \"gas_meter_1\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"Volume (mL)\")\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\r\n  |> yield(name: \"mean\")",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "aeerm33apqrr4c"
+          },
+          "hide": true,
+          "query": "import \"strings\"\r\n\r\nfrom(bucket: \"reactor-monitoring\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] =~ /^gas_meter_[1-4]$/) // Matches gas_meter_1 to gas_meter_4\r\n  |> filter(fn: (r) => r[\"_field\"] == \"Volume (mL)\") // Direct match instead of contains()\r\n  |> aggregateWindow(every: 30m, fn: mean, createEmpty: false) // Ensures data every 10 min\r\n  |> map(fn: (r) => ({\r\n      _time: r._time,\r\n      _value: r._value,\r\n      _field: \"Gas Meter \" + strings.substring(v: r._measurement, start: 10, end: 11) + \" - \" + r._field,\r\n      meter: r._measurement  // Retain meter identifier for Grafana filtering\r\n  }))\r\n  |> yield(name: \"gas_meters\")\r\n",
+          "refId": "B"
+        }
+      ],
+      "title": "Volume (mL)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "aeerm33apqrr4c"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 16,
+        "y": 26
+      },
+      "id": 19,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.5.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "aeerm33apqrr4c"
+          },
+          "hide": false,
+          "query": "from(bucket: \"reactor-monitoring\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"gas_meter_4\" or r[\"_measurement\"] == \"gas_meter_3\" or r[\"_measurement\"] == \"gas_meter_2\" or r[\"_measurement\"] == \"gas_meter_1\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"Pressure (hPa)\")\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\r\n  |> yield(name: \"mean\")",
+          "refId": "A"
+        }
+      ],
+      "title": "Pressure (hPa)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "aeerm33apqrr4c"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "axisSoftMax": 30,
+            "axisSoftMin": 0,
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byValue",
+              "options": {
+                "op": "gte",
+                "reducer": "lastNotNull",
+                "value": 200
+              }
+            },
+            "properties": [
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 0,
+        "y": 33
+      },
+      "id": 20,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.5.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "aeerm33apqrr4c"
+          },
+          "hide": false,
+          "query": "from(bucket: \"reactor-monitoring\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"gas_meter_4\" or r[\"_measurement\"] == \"gas_meter_3\" or r[\"_measurement\"] == \"gas_meter_2\" or r[\"_measurement\"] == \"gas_meter_1\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"Temperature (°C)\")\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\r\n  |> yield(name: \"mean\")",
+          "refId": "A"
+        }
+      ],
+      "title": "Flow Meter Temp (Room Temp)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "aeerm33apqrr4c"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "axisSoftMax": 4.5,
+            "axisSoftMin": 4,
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byValue",
+              "options": {
+                "op": "gte",
+                "reducer": "lastNotNull",
+                "value": 200
+              }
+            },
+            "properties": [
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 8,
+        "y": 33
+      },
+      "id": 18,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.5.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "aeerm33apqrr4c"
+          },
+          "hide": false,
+          "query": "from(bucket: \"reactor-monitoring\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"gas_meter_4\" or r[\"_measurement\"] == \"gas_meter_3\" or r[\"_measurement\"] == \"gas_meter_2\" or r[\"_measurement\"] == \"gas_meter_1\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"Battery (V)\")\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\r\n  |> yield(name: \"mean\")",
+          "refId": "A"
+        }
+      ],
+      "title": "Battery (V)",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": true,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 40
+      },
+      "id": 7,
+      "panels": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "aeerm33apqrr4c"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "line",
+                "fillOpacity": 0,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green"
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byValue",
+                  "options": {
+                    "op": "gte",
+                    "reducer": "lastNotNull",
+                    "value": 200
+                  }
+                },
+                "properties": [
+                  {
+                    "id": "custom.axisPlacement",
+                    "value": "right"
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 41
+          },
+          "id": 2,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "11.5.2",
+          "targets": [
             {
-              "selected": true,
-              "text": "Flow (mL/min)",
-              "value": "Flow (mL/min)"
+              "datasource": {
+                "type": "influxdb",
+                "uid": "aeerm33apqrr4c"
+              },
+              "hide": false,
+              "query": "from(bucket: \"reactor-monitoring\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"gas_meter_1\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"Flow (mL/min)\" \r\n      or r[\"_field\"] == \"Power Supply (V)\" \r\n      or r[\"_field\"] == \"Flow Normalised (mL/min)\" \r\n      or r[\"_field\"] == \"Pressure (hPa)\" \r\n      or r[\"_field\"] == \"Temperature (°C)\" \r\n      or r[\"_field\"] == \"Volume (mL)\" \r\n      or r[\"_field\"] == \"Volume Normalised (mL)\" \r\n      or r[\"_field\"] == \"Battery (V)\")\r\n  |> map(fn: (r) => ({\r\n      _time: r._time,\r\n      _value: r._value,\r\n      _field: \"Gas Meter 1 - \" + r._field\r\n  }))\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\r\n  |> yield(name: \"mean\")\r\n",
+              "refId": "A"
             },
             {
-              "selected": false,
-              "text": "Power Supply (V)",
-              "value": "Power Supply (V)"
-            },
-            {
-              "selected": false,
-              "text": "Flow Normalised (mL/min)",
-              "value": "Flow Normalised (mL/min)"
-            },
-            {
-              "selected": false,
-              "text": "Pressure (hPa)",
-              "value": "Pressure (hPa)"
-            },
-            {
-              "selected": false,
-              "text": "Temperature (°C)",
-              "value": "Temperature (°C)"
-            },
-            {
-              "selected": false,
-              "text": "Volume (mL)",
-              "value": "Volume (mL)"
-            },
-            {
-              "selected": false,
-              "text": "Volume Normalised (mL)",
-              "value": "Volume Normalised (mL)"
-            },
-            {
-              "selected": false,
-              "text": "Battery (V)",
-              "value": "Battery (V)"
+              "datasource": {
+                "type": "influxdb",
+                "uid": "aeerm33apqrr4c"
+              },
+              "hide": false,
+              "query": "import \"strings\"\r\n\r\nfrom(bucket: \"reactor-monitoring\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"pico_measurements\")\r\n  |> filter(fn: (r) => r[\"device\"] == \"pico_1\") \r\n  |> filter(fn: (r) => r[\"_field\"] == \"Temperature\" or r[\"_field\"] == \"pH\" or r[\"_field\"] == \"ORP\" or r[\"_field\"] == \"motor_mA\" or r[\"_field\"] == \"RPM\")\r\n//   // Filter out unreasonable values (adjust thresholds as needed).  Use the *engineering unit* ranges.\r\n//   |> filter(fn: (r) => \r\n//       (r._field == \"motor_mA\"    and r._value <  2000 and r._value >= -5) and\r\n//       (r._field == \"Temperature\" and r._value <  110  and r._value >= -1) and\r\n//       (r._field == \"pH\"          and r._value <  14.5 and r._value >= -0.5) and\r\n//       (r._field == \"ORP\"         and r._value <  2100 and r._value >= -2100) and\r\n//       (r._field == \"RPM\"         and r._value < 60000 and r._value >= -1)\r\n//     )\r\n  |> map(fn: (r) => ({\r\n      _time: r._time,\r\n      _value: r._value,\r\n      _field: \"Pico \" + strings.substring(v: r.device, start: 5, end: 6) + \" - \" + r._field //Simplified field naming\r\n  }))\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\r\n  |> yield(name: \"picos\")",
+              "refId": "B"
             }
           ],
-          "query": "Flow (mL/min), Power Supply (V) , Flow Normalised (mL/min), Pressure (hPa), Temperature (°C), Volume (mL), Volume Normalised (mL), Battery (V)",
-          "type": "custom"
+          "title": "Reactor 1",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "aeerm33apqrr4c"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "line",
+                "fillOpacity": 0,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green"
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byValue",
+                  "options": {
+                    "op": "gte",
+                    "reducer": "lastNotNull",
+                    "value": 200
+                  }
+                },
+                "properties": [
+                  {
+                    "id": "custom.axisPlacement",
+                    "value": "right"
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 41
+          },
+          "id": 4,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "11.5.2",
+          "targets": [
+            {
+              "datasource": {
+                "type": "influxdb",
+                "uid": "aeerm33apqrr4c"
+              },
+              "hide": false,
+              "query": "from(bucket: \"reactor-monitoring\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"gas_meter_2\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"Flow (mL/min)\" \r\n      or r[\"_field\"] == \"Power Supply (V)\" \r\n      or r[\"_field\"] == \"Flow Normalised (mL/min)\" \r\n      or r[\"_field\"] == \"Pressure (hPa)\" \r\n      or r[\"_field\"] == \"Temperature (°C)\" \r\n      or r[\"_field\"] == \"Volume (mL)\" \r\n      or r[\"_field\"] == \"Volume Normalised (mL)\" \r\n      or r[\"_field\"] == \"Battery (V)\")\r\n  |> map(fn: (r) => ({\r\n      _time: r._time,\r\n      _value: r._value,\r\n      _field: \"Gas Meter 2 - \" + r._field\r\n  }))\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\r\n  |> yield(name: \"mean\")\r\n",
+              "refId": "A"
+            },
+            {
+              "datasource": {
+                "type": "influxdb",
+                "uid": "aeerm33apqrr4c"
+              },
+              "hide": false,
+              "query": "import \"strings\"\r\n\r\nfrom(bucket: \"reactor-monitoring\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"pico_measurements\")\r\n  |> filter(fn: (r) => r[\"device\"] == \"pico_2\") \r\n  |> filter(fn: (r) => r[\"_field\"] == \"Temperature\" or r[\"_field\"] == \"pH\" or r[\"_field\"] == \"ORP\" or r[\"_field\"] == \"motor_mA\" or r[\"_field\"] == \"RPM\")\r\n//   // Filter out unreasonable values (adjust thresholds as needed).  Use the *engineering unit* ranges.\r\n//   |> filter(fn: (r) => \r\n//       (r._field == \"motor_mA\"    and r._value <  2000 and r._value >= -5) and\r\n//       (r._field == \"Temperature\" and r._value <  110  and r._value >= -1) and\r\n//       (r._field == \"pH\"          and r._value <  14.5 and r._value >= -0.5) and\r\n//       (r._field == \"ORP\"         and r._value <  2100 and r._value >= -2100) and\r\n//       (r._field == \"RPM\"         and r._value < 60000 and r._value >= -1)\r\n//     )\r\n  |> map(fn: (r) => ({\r\n      _time: r._time,\r\n      _value: r._value,\r\n      _field: \"Pico \" + strings.substring(v: r.device, start: 5, end: 6) + \" - \" + r._field //Simplified field naming\r\n  }))\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\r\n  |> yield(name: \"picos\")",
+              "refId": "B"
+            }
+          ],
+          "title": "Reactor 2",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "aeerm33apqrr4c"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "line",
+                "fillOpacity": 0,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green"
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byValue",
+                  "options": {
+                    "op": "gte",
+                    "reducer": "lastNotNull",
+                    "value": 200
+                  }
+                },
+                "properties": [
+                  {
+                    "id": "custom.axisPlacement",
+                    "value": "right"
+                  }
+                ]
+              },
+              {
+                "__systemRef": "hideSeriesFrom",
+                "matcher": {
+                  "id": "byNames",
+                  "options": {
+                    "mode": "exclude",
+                    "names": [
+                      "Pico 3 - ORP"
+                    ],
+                    "prefix": "All except:",
+                    "readOnly": true
+                  }
+                },
+                "properties": [
+                  {
+                    "id": "custom.hideFrom",
+                    "value": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": true
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 49
+          },
+          "id": 3,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "11.5.2",
+          "targets": [
+            {
+              "datasource": {
+                "type": "influxdb",
+                "uid": "aeerm33apqrr4c"
+              },
+              "hide": false,
+              "query": "from(bucket: \"reactor-monitoring\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"gas_meter_3\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"Flow (mL/min)\" \r\n      or r[\"_field\"] == \"Power Supply (V)\" \r\n      or r[\"_field\"] == \"Flow Normalised (mL/min)\" \r\n      or r[\"_field\"] == \"Pressure (hPa)\" \r\n      or r[\"_field\"] == \"Temperature (°C)\" \r\n      or r[\"_field\"] == \"Volume (mL)\" \r\n      or r[\"_field\"] == \"Volume Normalised (mL)\" \r\n      or r[\"_field\"] == \"Battery (V)\")\r\n  |> map(fn: (r) => ({\r\n      _time: r._time,\r\n      _value: r._value,\r\n      _field: \"Gas Meter 3 - \" + r._field\r\n  }))\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\r\n  |> yield(name: \"mean\")\r\n",
+              "refId": "A"
+            },
+            {
+              "datasource": {
+                "type": "influxdb",
+                "uid": "aeerm33apqrr4c"
+              },
+              "hide": false,
+              "query": "import \"strings\"\r\n\r\nfrom(bucket: \"reactor-monitoring\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"pico_measurements\")\r\n  |> filter(fn: (r) => r[\"device\"] == \"pico_3\") \r\n  |> filter(fn: (r) => r[\"_field\"] == \"Temperature\" or r[\"_field\"] == \"pH\" or r[\"_field\"] == \"ORP\" or r[\"_field\"] == \"motor_mA\" or r[\"_field\"] == \"RPM\")\r\n//   // Filter out unreasonable values (adjust thresholds as needed).  Use the *engineering unit* ranges.\r\n//   |> filter(fn: (r) => \r\n//       (r._field == \"motor_mA\"    and r._value <  2000 and r._value >= -5) and\r\n//       (r._field == \"Temperature\" and r._value <  110  and r._value >= -1) and\r\n//       (r._field == \"pH\"          and r._value <  14.5 and r._value >= -0.5) and\r\n//       (r._field == \"ORP\"         and r._value <  2100 and r._value >= -2100) and\r\n//       (r._field == \"RPM\"         and r._value < 60000 and r._value >= -1)\r\n//     )\r\n  |> map(fn: (r) => ({\r\n      _time: r._time,\r\n      _value: r._value,\r\n      _field: \"Pico \" + strings.substring(v: r.device, start: 5, end: 6) + \" - \" + r._field //Simplified field naming\r\n  }))\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\r\n  |> yield(name: \"picos\")",
+              "refId": "B"
+            }
+          ],
+          "title": "Reactor 3",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "aeerm33apqrr4c"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "line",
+                "fillOpacity": 0,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green"
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byValue",
+                  "options": {
+                    "op": "gte",
+                    "reducer": "lastNotNull",
+                    "value": 200
+                  }
+                },
+                "properties": [
+                  {
+                    "id": "custom.axisPlacement",
+                    "value": "right"
+                  }
+                ]
+              },
+              {
+                "__systemRef": "hideSeriesFrom",
+                "matcher": {
+                  "id": "byNames",
+                  "options": {
+                    "mode": "exclude",
+                    "names": [
+                      "Pico 4 - ORP"
+                    ],
+                    "prefix": "All except:",
+                    "readOnly": true
+                  }
+                },
+                "properties": [
+                  {
+                    "id": "custom.hideFrom",
+                    "value": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": true
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 49
+          },
+          "id": 5,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "11.5.2",
+          "targets": [
+            {
+              "datasource": {
+                "type": "influxdb",
+                "uid": "aeerm33apqrr4c"
+              },
+              "hide": false,
+              "query": "from(bucket: \"reactor-monitoring\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"gas_meter_4\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"Flow (mL/min)\" \r\n      or r[\"_field\"] == \"Power Supply (V)\" \r\n      or r[\"_field\"] == \"Flow Normalised (mL/min)\" \r\n      or r[\"_field\"] == \"Pressure (hPa)\" \r\n      or r[\"_field\"] == \"Temperature (°C)\" \r\n      or r[\"_field\"] == \"Volume (mL)\" \r\n      or r[\"_field\"] == \"Volume Normalised (mL)\" \r\n      or r[\"_field\"] == \"Battery (V)\")\r\n  |> map(fn: (r) => ({\r\n      _time: r._time,\r\n      _value: r._value,\r\n      _field: \"Gas Meter 4 - \" + r._field\r\n  }))\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\r\n  |> yield(name: \"mean\")\r\n",
+              "refId": "A"
+            },
+            {
+              "datasource": {
+                "type": "influxdb",
+                "uid": "aeerm33apqrr4c"
+              },
+              "hide": false,
+              "query": "import \"strings\"\r\n\r\nfrom(bucket: \"reactor-monitoring\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"pico_measurements\")\r\n  |> filter(fn: (r) => r[\"device\"] == \"pico_4\") \r\n  |> filter(fn: (r) => r[\"_field\"] == \"Temperature\" or r[\"_field\"] == \"pH\" or r[\"_field\"] == \"ORP\" or r[\"_field\"] == \"motor_mA\" or r[\"_field\"] == \"RPM\")\r\n//   // Filter out unreasonable values (adjust thresholds as needed).  Use the *engineering unit* ranges.\r\n//   |> filter(fn: (r) => \r\n//       (r._field == \"motor_mA\"    and r._value <  2000 and r._value >= -5) and\r\n//       (r._field == \"Temperature\" and r._value <  110  and r._value >= -1) and\r\n//       (r._field == \"pH\"          and r._value <  14.5 and r._value >= -0.5) and\r\n//       (r._field == \"ORP\"         and r._value <  2100 and r._value >= -2100) and\r\n//       (r._field == \"RPM\"         and r._value < 60000 and r._value >= -1)\r\n//     )\r\n  |> map(fn: (r) => ({\r\n      _time: r._time,\r\n      _value: r._value,\r\n      _field: \"Pico \" + strings.substring(v: r.device, start: 5, end: 6) + \" - \" + r._field //Simplified field naming\r\n  }))\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\r\n  |> yield(name: \"picos\")",
+              "refId": "B"
+            }
+          ],
+          "title": "Reactor 4",
+          "type": "timeseries"
         }
-      ]
-    },
-    "time": {
-      "from": "now-3h",
-      "to": "now"
-    },
-    "timepicker": {},
-    "timezone": "browser",
-    "title": "Cetogenix Reactors Test",
-    "uid": "aef21xt93ta80c",
-    "version": 2,
-    "weekStart": ""
-  }
+      ],
+      "title": "Overview",
+      "type": "row"
+    }
+  ],
+  "preload": true,
+  "refresh": "5m",
+  "schemaVersion": 40,
+  "tags": [],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-2d",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Cetogenix Reactors",
+  "uid": "aef21xt93ta80b",
+  "version": 61,
+  "weekStart": ""
+}
